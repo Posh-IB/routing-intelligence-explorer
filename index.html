@@ -1,0 +1,1411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Routing Intelligence Explorer - Internal scenario planning tool for DAO affiliate revenue optimization">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Routing Intelligence Explorer | Internal Decision Support Tool Prototype – Routing Partner Analysis Tool Not a production routing engine.</title
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --neon-cyan: #00f0ff;
+            --neon-purple: #b829dd;
+            --neon-green: #00ff9d;
+            --neon-orange: #ff9d00;
+            --neon-pink: #ff00aa;
+            --deep-space: #0a0a0f;
+            --glass: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --warning: #f59e0b;
+            --verified: #10b981;
+            --estimated: #6b7280;
+            --draft: #3b82f6;
+        }
+        
+        * { box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--deep-space);
+            color: #e0e0e0;
+            overflow-x: hidden;
+            margin: 0;
+            padding: 0;
+        }
+        
+        .font-display { font-family: 'Space Grotesk', sans-serif; }
+        
+        .glass-panel {
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+        
+        .gradient-text {
+            background: linear-gradient(135deg, var(--neon-cyan), var(--neon-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .protocol-card {
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .protocol-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent);
+            transition: left 0.7s;
+        }
+        
+        .protocol-card:hover::before { left: 100%; }
+        
+        .protocol-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--neon-cyan);
+            box-shadow: 0 20px 40px rgba(0, 240, 255, 0.1);
+        }
+        
+        .metric-highlight {
+            background: linear-gradient(135deg, rgba(0, 240, 255, 0.1), rgba(184, 41, 221, 0.1));
+            border-left: 3px solid var(--neon-cyan);
+        }
+        
+        .slider-thumb::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: var(--neon-cyan);
+            cursor: pointer;
+            border-radius: 50%;
+            box-shadow: 0 0 20px rgba(0, 240, 255, 0.5);
+        }
+        
+        .slider-thumb::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            background: var(--neon-cyan);
+            cursor: pointer;
+            border-radius: 50%;
+            box-shadow: 0 0 20px rgba(0, 240, 255, 0.5);
+            border: none;
+        }
+        
+        .glow-text { text-shadow: 0 0 20px rgba(0, 240, 255, 0.5); }
+        
+        .grid-bg {
+            background-image: 
+                linear-gradient(rgba(0, 240, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 240, 255, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        .animate-float { animation: float 6s ease-in-out infinite; }
+        .comparison-row:hover { background: rgba(255, 255, 255, 0.05); }
+        
+        .add-protocol-btn {
+            background: linear-gradient(135deg, rgba(0, 240, 255, 0.1), rgba(184, 41, 221, 0.1));
+            border: 2px dashed rgba(0, 240, 255, 0.3);
+            transition: all 0.3s ease;
+        }
+        
+        .add-protocol-btn:hover {
+            border-color: var(--neon-cyan);
+            background: linear-gradient(135deg, rgba(0, 240, 255, 0.2), rgba(184, 41, 221, 0.2));
+        }
+        
+        .delete-btn { opacity: 0; transition: opacity 0.3s ease; }
+        .protocol-card:hover .delete-btn { opacity: 1; }
+        
+        /* Data Quality Badges */
+        .badge-verified {
+            background: rgba(16, 185, 129, 0.2);
+            color: #10b981;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+        
+        .badge-estimated {
+            background: rgba(107, 114, 128, 0.2);
+            color: #9ca3af;
+            border: 1px solid rgba(107, 114, 128, 0.3);
+        }
+        
+        .badge-draft {
+            background: rgba(59, 130, 246, 0.2);
+            color: #60a5fa;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+        
+        .badge-illustrative {
+            background: rgba(245, 158, 11, 0.2);
+            color: #fbbf24;
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+        
+        /* Warning Banner */
+        .warning-banner {
+            background: linear-gradient(90deg, rgba(245, 158, 11, 0.1), rgba(245, 158, 11, 0.05));
+            border-left: 4px solid var(--warning);
+        }
+        
+        /* Score Rings */
+        .score-ring {
+            position: relative;
+            width: 60px;
+            height: 60px;
+        }
+        
+        .score-ring svg {
+            transform: rotate(-90deg);
+        }
+        
+        .score-ring circle {
+            fill: none;
+            stroke-width: 4;
+        }
+        
+        .score-ring .bg { stroke: rgba(255,255,255,0.1); }
+        .score-ring .progress { stroke: var(--neon-cyan); stroke-linecap: round; }
+        
+        /* Use Case Cards */
+        .use-case-card {
+            background: linear-gradient(135deg, rgba(0, 240, 255, 0.05), rgba(184, 41, 221, 0.05));
+            border: 1px solid rgba(0, 240, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .use-case-card:hover {
+            border-color: rgba(0, 240, 255, 0.3);
+            transform: translateX(5px);
+        }
+        
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: var(--deep-space); }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #555; }
+        
+        /* Print */
+        @media print {
+            .glass-panel { background: white !important; color: black !important; border: 1px solid #ccc; }
+            .gradient-text { background: none; -webkit-text-fill-color: black; color: black; }
+            .no-print { display: none !important; }
+        }
+        
+        /* Mobile */
+        @media (max-width: 768px) {
+            .glass-panel { backdrop-filter: none; -webkit-backdrop-filter: none; }
+        }
+    </style>
+</head>
+<body class="grid-bg min-h-screen">
+
+    <!-- Warning Banner -->
+    <div class="warning-banner px-6 py-4 border-b border-yellow-500/20 no-print">
+        <div class="max-w-7xl mx-auto flex items-start gap-4">
+            <i class="fas fa-exclamation-triangle text-yellow-500 mt-1"></i>
+            <div>
+                <h3 class="font-medium text-yellow-400 text-sm mb-1">Internal Prototype — Scenario Analysis Only</h3>
+                <p class="text-xs text-gray-400 leading-relaxed">
+                    This tool is for <strong>internal partner comparison and directional planning only</strong>. Not a production routing engine. 
+                    Figures include estimated, draft, and illustrative assumptions pending validation. 
+                    Do not use for commercial negotiations or public-facing claims without verification.
+                </p>
+            </div>
+            <button onclick="this.parentElement.parentElement.remove()" class="ml-auto text-gray-500 hover:text-white">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <header class="fixed top-0 w-full z-50 glass-panel border-b border-white/10 mt-0 md:mt-0" style="top: 0;">
+        <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-400 to-purple-600 flex items-center justify-center font-bold text-white text-xl">
+                    <i class="fas fa-network-wired"></i>
+                </div>
+                <div>
+                    <h1 class="font-display font-bold text-xl tracking-tight text-white">Routing Intelligence<span class="gradient-text">Explorer</span></h1>
+                    <p class="text-xs text-gray-400">Internal Decision Support Tool</p>
+                </div>
+            </div>
+            <div class="flex gap-4 text-sm">
+                <div class="flex items-center gap-2 px-3 py-2 rounded-full glass-panel text-xs">
+                    <div class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div>
+                    <span class="text-gray-300">Client-side only</span>
+                </div>
+                <button onclick="exportReport()" class="px-4 py-2 rounded-lg bg-gradient-to-r from-cyan-500 to-purple-600 text-white font-medium hover:shadow-lg hover:shadow-cyan-500/25 transition-all flex items-center gap-2 text-sm">
+                    <i class="fas fa-download"></i> Export
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="pt-32 pb-12 px-6 max-w-7xl mx-auto space-y-8">
+
+        <!-- Hero Section -->
+        <section class="text-center py-8 relative">
+            <div class="absolute inset-0 bg-gradient-to-r from-cyan-500/10 to-purple-500/10 blur-3xl -z-10"></div>
+            <h2 class="font-display text-4xl md:text-5xl font-bold mb-4 text-white">
+                Affiliate Revenue <span class="gradient-text glow-text">Scenario Planning</span>
+            </h2>
+            <p class="text-lg text-gray-400 max-w-3xl mx-auto leading-relaxed">
+                Explore routing partners across revenue potential, integration complexity, and strategic fit. 
+                Weighted scoring for DAO-aligned decision making.
+            </p>
+            
+            <!-- Quick Stats -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8 max-w-5xl mx-auto">
+                <div class="glass-panel rounded-2xl p-4 text-center animate-float" style="animation-delay: 0s;">
+                    <div class="text-2xl font-bold text-cyan-400 mb-1" id="totalProtocols">10</div>
+                    <div class="text-xs text-gray-400">Protocols Analyzed</div>
+                </div>
+                <div class="glass-panel rounded-2xl p-4 text-center animate-float" style="animation-delay: 0.2s;">
+                    <div class="text-2xl font-bold text-purple-400 mb-1" id="avgScore">0</div>
+                    <div class="text-xs text-gray-400">Avg. Weighted Score</div>
+                </div>
+                <div class="glass-panel rounded-2xl p-4 text-center animate-float" style="animation-delay: 0.4s;">
+                    <div class="text-2xl font-bold text-green-400 mb-1">5</div>
+                    <div class="text-xs text-gray-400">Scoring Dimensions</div>
+                </div>
+                <div class="glass-panel rounded-2xl p-4 text-center animate-float" style="animation-delay: 0.6s;">
+                    <div class="text-2xl font-bold text-orange-400 mb-1" id="topUseCase">-</div>
+                    <div class="text-xs text-gray-400">Top Strategic Fit</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Strategic Priority Selector -->
+        <section class="glass-panel rounded-2xl p-6 border border-white/10">
+            <h3 class="font-display text-lg font-bold text-white mb-4 flex items-center gap-2">
+                <i class="fas fa-bullseye text-cyan-400"></i>
+                Strategic Priority
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <button onclick="setUseCase('affiliate')" class="use-case-card p-4 rounded-xl text-left group">
+                    <div class="flex items-center gap-3 mb-2">
+                        <div class="w-8 h-8 rounded-lg bg-cyan-500/20 flex items-center justify-center text-cyan-400 group-hover:scale-110 transition-transform">
+                            <i class="fas fa-coins"></i>
+                        </div>
+                        <h4 class="font-medium text-white">Affiliate Expansion</h4>
+                    </div>
+                    <p class="text-xs text-gray-400">Maximize fee revenue across high-volume EVM chains</p>
+                </button>
+                
+                <button onclick="setUseCase('btc')" class="use-case-card p-4 rounded-xl text-left group">
+                    <div class="flex items-center gap-3 mb-2">
+                        <div class="w-8 h-8 rounded-lg bg-orange-500/20 flex items-center justify-center text-orange-400 group-hover:scale-110 transition-transform">
+                            <i class="fab fa-bitcoin"></i>
+                        </div>
+                        <h4 class="font-medium text-white">BTC-Native Flows</h4>
+                    </div>
+                    <p class="text-xs text-gray-400">Native Bitcoin swaps without wrapped assets</p>
+                </button>
+                
+                <button onclick="setUseCase('mev')" class="use-case-card p-4 rounded-xl text-left group">
+                    <div class="flex items-center gap-3 mb-2">
+                        <div class="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center text-purple-400 group-hover:scale-110 transition-transform">
+                            <i class="fas fa-shield-alt"></i>
+                        </div>
+                        <h4 class="font-medium text-white">MEV-Sensitive Whales</h4>
+                    </div>
+                    <p class="text-xs text-gray-400">Protect large trades from frontrunning and sandwich attacks</p>
+                </button>
+                
+                <button onclick="setUseCase('crosschain')" class="use-case-card p-4 rounded-xl text-left group">
+                    <div class="flex items-center gap-3 mb-2">
+                        <div class="w-8 h-8 rounded-lg bg-green-500/20 flex items-center justify-center text-green-400 group-hover:scale-110 transition-transform">
+                            <i class="fas fa-bridge"></i>
+                        </div>
+                        <h4 class="font-medium text-white">Cross-Chain Acquisition</h4>
+                    </div>
+                    <p class="text-xs text-gray-400">Bridge-led user acquisition across L1s and L2s</p>
+                </button>
+            </div>
+        </section>
+
+        <!-- Controls Bar -->
+        <section class="glass-panel rounded-2xl p-4 flex flex-wrap gap-4 items-center justify-between sticky top-24 z-40 backdrop-blur-xl bg-black/40">
+            <div class="flex gap-2 overflow-x-auto pb-2 md:pb-0" id="protocolFilters">
+                <button onclick="filterProtocols('all')" class="px-4 py-2 rounded-lg bg-cyan-500/20 text-cyan-400 text-sm font-medium border border-cyan-500/30 hover:bg-cyan-500/30 transition-all">All</button>
+                <button onclick="filterProtocols('evm')" class="px-4 py-2 rounded-lg bg-white/5 text-gray-400 text-sm font-medium border border-white/10 hover:bg-white/10 transition-all">EVM</button>
+                <button onclick="filterProtocols('crosschain')" class="px-4 py-2 rounded-lg bg-white/5 text-gray-400 text-sm font-medium border border-white/10 hover:bg-white/10 transition-all">Cross-Chain</button>
+                <button onclick="filterProtocols('highscore')" class="px-4 py-2 rounded-lg bg-white/5 text-gray-400 text-sm font-medium border border-white/10 hover:bg-white/10 transition-all">Top Scored</button>
+            </div>
+            
+            <div class="flex gap-3">
+                <button onclick="openAddModal()" class="add-protocol-btn px-4 py-2 rounded-lg text-cyan-400 font-medium flex items-center gap-2 text-sm">
+                    <i class="fas fa-plus"></i> Add Protocol
+                </button>
+                <button onclick="toggleScoringWeights()" class="px-4 py-2 rounded-lg bg-white/5 text-gray-400 hover:text-white hover:bg-white/10 transition-all text-sm">
+                    <i class="fas fa-sliders-h"></i> Weights
+                </button>
+            </div>
+        </section>
+
+        <!-- Scoring Weights Panel (Collapsible) -->
+        <section id="weightsPanel" class="hidden glass-panel rounded-2xl p-6 border border-white/10">
+            <h3 class="font-display text-lg font-bold text-white mb-4">Scoring Weights</h3>
+            <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+                <div>
+                    <label class="flex justify-between text-sm text-gray-400 mb-2">
+                        <span>Revenue Potential</span>
+                        <span class="text-cyan-400" id="weightRevenueDisplay">30%</span>
+                    </label>
+                    <input type="range" min="0" max="100" value="30" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer slider-thumb" id="weightRevenue" oninput="updateWeights()">
+                </div>
+                <div>
+                    <label class="flex justify-between text-sm text-gray-400 mb-2">
+                        <span>Integration Ease</span>
+                        <span class="text-purple-400" id="weightComplexityDisplay">20%</span>
+                    </label>
+                    <input type="range" min="0" max="100" value="20" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer slider-thumb" id="weightComplexity" oninput="updateWeights()">
+                </div>
+                <div>
+                    <label class="flex justify-between text-sm text-gray-400 mb-2">
+                        <span>Route Coverage</span>
+                        <span class="text-green-400" id="weightCoverageDisplay">20%</span>
+                    </label>
+                    <input type="range" min="0" max="100" value="20" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer slider-thumb" id="weightCoverage" oninput="updateWeights()">
+                </div>
+                <div>
+                    <label class="flex justify-between text-sm text-gray-400 mb-2">
+                        <span>MEV Protection</span>
+                        <span class="text-orange-400" id="weightMevDisplay">15%</span>
+                    </label>
+                    <input type="range" min="0" max="100" value="15" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer slider-thumb" id="weightMev" oninput="updateWeights()">
+                </div>
+                <div>
+                    <label class="flex justify-between text-sm text-gray-400 mb-2">
+                        <span>Cross-Chain</span>
+                        <span class="text-pink-400" id="weightCrosschainDisplay">15%</span>
+                    </label>
+                    <input type="range" min="0" max="100" value="15" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer slider-thumb" id="weightCrosschain" oninput="updateWeights()">
+                </div>
+            </div>
+            <div class="mt-4 p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
+                <p class="text-xs text-yellow-400">
+                    <i class="fas fa-info-circle mr-2"></i>
+                    Weights affect the Weighted Score column in the comparison matrix. Default weights favor revenue and coverage.
+                </p>
+            </div>
+        </section>
+
+        <!-- Revenue Simulator -->
+        <section class="glass-panel rounded-3xl p-8 border border-white/10">
+            <div class="flex justify-between items-center mb-6 flex-wrap gap-4">
+                <div>
+                    <h3 class="font-display text-2xl font-bold text-white mb-2">Scenario Simulator</h3>
+                    <p class="text-gray-400 text-sm">Illustrative revenue projections. Not financial forecasts.</p>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="setScenario('conservative')" class="px-3 py-2 rounded-lg text-xs bg-white/5 hover:bg-white/10 text-gray-300 transition-colors">Conservative</button>
+                    <button onclick="setScenario('moderate')" class="px-3 py-2 rounded-lg text-xs bg-white/5 hover:bg-white/10 text-gray-300 transition-colors">Moderate</button>
+                    <button onclick="setScenario('aggressive')" class="px-3 py-2 rounded-lg text-xs bg-white/5 hover:bg-white/10 text-gray-300 transition-colors">Aggressive</button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Controls -->
+                <div class="lg:col-span-1 space-y-5">
+                    <div>
+                        <label class="flex justify-between text-sm font-medium text-gray-300 mb-2">
+                            <span>Monthly Volume (Illustrative)</span>
+                            <span class="text-cyan-400" id="volumeDisplay">$1,000,000</span>
+                        </label>
+                        <input type="range" min="100000" max="100000000" step="100000" value="1000000" 
+                               class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer slider-thumb" 
+                               id="volumeSlider" oninput="updateSimulation()">
+                    </div>
+
+                    <div>
+                        <label class="flex justify-between text-sm font-medium text-gray-300 mb-2">
+                            <span>Avg Fee Rate (Midpoint)</span>
+                            <span class="text-purple-400" id="feeDisplay">0.30%</span>
+                        </label>
+                        <input type="range" min="0.01" max="2.0" step="0.01" value="0.30" 
+                               class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer slider-thumb" 
+                               id="feeSlider" oninput="updateSimulation()">
+                    </div>
+
+                    <div class="p-4 rounded-xl bg-white/5 border border-white/10">
+                        <div class="text-xs text-gray-400 mb-2">Simulation Mode</div>
+                        <select id="simMode" onchange="updateSimulation()" class="w-full bg-transparent text-white font-medium focus:outline-none text-sm">
+                            <option value="directional">Directional Comparison Only</option>
+                            <option value="weighted">Weighted by Strategic Fit</option>
+                        </select>
+                    </div>
+
+                    <div class="p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
+                        <p class="text-xs text-yellow-400">
+                            <i class="fas fa-exclamation-triangle mr-1"></i>
+                            Simplified model: midpoint fee × volume × revenue share. 
+                            Excludes gas, slippage, failure rates, and retention effects.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Results -->
+                <div class="lg:col-span-2 space-y-4">
+                    <div class="glass-panel rounded-2xl p-6 border border-cyan-500/30 bg-cyan-500/5">
+                        <div class="flex justify-between items-center mb-3">
+                            <span class="text-gray-400 text-sm">Illustrative Monthly Revenue</span>
+                            <span class="text-xs px-2 py-1 rounded-full bg-yellow-500/20 text-yellow-400">Not a forecast</span>
+                        </div>
+                        <div class="text-4xl font-bold text-white mb-1" id="totalRevenue">$0</div>
+                        <div class="text-xs text-gray-500">Across <span id="activeProtocolCount">0</span> protocols • Midpoint estimates only</div>
+                    </div>
+
+                    <div class="h-56 w-full">
+                        <canvas id="revenueChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Protocol Cards with Scores -->
+        <section id="protocolsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <!-- Cards inserted dynamically -->
+        </section>
+
+        <!-- Comparison Matrix -->
+        <section class="glass-panel rounded-3xl p-8 border border-white/10 overflow-hidden">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="font-display text-2xl font-bold text-white">Comparison Matrix</h3>
+                <div class="flex gap-2">
+                    <button onclick="exportCSV()" class="px-3 py-2 rounded-lg bg-white/5 text-gray-400 hover:text-white hover:bg-white/10 transition-all text-sm">
+                        <i class="fas fa-file-csv"></i> CSV
+                    </button>
+                </div>
+            </div>
+            
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse text-sm" id="comparisonMatrix">
+                    <thead>
+                        <tr class="border-b border-white/10">
+                            <th class="py-3 px-3 text-gray-400 sticky left-0 bg-[#0a0a0f] z-10">Protocol</th>
+                            <th class="py-3 px-3 text-gray-400">Data Quality</th>
+                            <th class="py-3 px-3 text-gray-400">Fee Range</th>
+                            <th class="py-3 px-3 text-gray-400">Rev Share</th>
+                            <th class="py-3 px-3 text-gray-400">Chains</th>
+                            <th class="py-3 px-3 text-gray-400">Complexity</th>
+                            <th class="py-3 px-3 text-gray-400">MEV</th>
+                            <th class="py-3 px-3 text-gray-400">Weighted Score</th>
+                            <th class="py-3 px-3 text-gray-400">Illust. Rev/$1M</th>
+                        </tr>
+                    </thead>
+                    <tbody id="matrixBody" class="text-sm">
+                        <!-- Dynamic rows -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Data Quality Legend -->
+        <section class="glass-panel rounded-2xl p-6 border border-white/10">
+            <h3 class="font-display text-lg font-bold text-white mb-4">Data Quality Key</h3>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="flex items-center gap-3">
+                    <span class="px-2 py-1 rounded text-xs font-medium badge-verified">Verified</span>
+                    <span class="text-xs text-gray-400">Confirmed by protocol docs or direct communication</span>
+                </div>
+                <div class="flex items-center gap-3">
+                    <span class="px-2 py-1 rounded text-xs font-medium badge-estimated">Estimated</span>
+                    <span class="text-xs text-gray-400">Derived from public data or comparable protocols</span>
+                </div>
+                <div class="flex items-center gap-3">
+                    <span class="px-2 py-1 rounded text-xs font-medium badge-draft">Draft</span>
+                    <span class="text-xs text-gray-400">Proposed or in-development features</span>
+                </div>
+                <div class="flex items-center gap-3">
+                    <span class="px-2 py-1 rounded text-xs font-medium badge-illustrative">Illustrative</span>
+                    <span class="text-xs text-gray-400">Placeholder for scenario planning only</span>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Add Protocol Modal -->
+    <div id="addModal" class="fixed inset-0 z-50 hidden">
+        <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" onclick="closeAddModal()"></div>
+        <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl p-6 max-h-[90vh] overflow-y-auto">
+            <div class="glass-panel rounded-3xl p-8 border border-cyan-500/30 shadow-2xl shadow-cyan-500/10">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="font-display text-2xl font-bold text-white">Add Protocol for Analysis</h3>
+                    <button onclick="closeAddModal()" class="text-gray-400 hover:text-white transition-colors">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+
+                <form id="addProtocolForm" onsubmit="handleAddProtocol(event)" class="space-y-4">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm text-gray-400 mb-2">Protocol Name *</label>
+                            <input type="text" name="name" required class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white focus:border-cyan-500 focus:outline-none transition-colors" placeholder="e.g., Jupiter">
+                        </div>
+                        <div>
+                            <label class="block text-sm text-gray-400 mb-2">Type *</label>
+                            <select name="type" required class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white focus:border-cyan-500 focus:outline-none transition-colors">
+                                <option value="Aggregator">Aggregator</option>
+                                <option value="DEX">DEX</option>
+                                <option value="Bridge">Bridge</option>
+                                <option value="Cross-Chain">Cross-Chain</option>
+                                <option value="RFQ">RFQ/Intent</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-2">Data Quality *</label>
+                        <select name="dataQuality" required class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white focus:border-cyan-500 focus:outline-none transition-colors">
+                            <option value="verified">Verified (confirmed by docs/team)</option>
+                            <option value="estimated">Estimated (derived from public data)</option>
+                            <option value="draft">Draft (proposed/in development)</option>
+                            <option value="illustrative" selected>Illustrative (placeholder only)</option>
+                        </select>
+                    </div>
+
+                    <div class="grid grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-sm text-gray-400 mb-2">Min Fee (%)</label>
+                            <input type="number" name="minFee" step="0.01" min="0" max="100" value="0" class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white focus:border-cyan-500 focus:outline-none transition-colors">
+                        </div>
+                        <div>
+                            <label class="block text-sm text-gray-400 mb-2">Max Fee (%)</label>
+                            <input type="number" name="maxFee" step="0.01" min="0" max="100" value="1" class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white focus:border-cyan-500 focus:outline-none transition-colors">
+                        </div>
+                        <div>
+                            <label class="block text-sm text-gray-400 mb-2">Revenue Share (%)</label>
+                            <input type="number" name="revenueShare" step="1" min="0" max="100" value="80" class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white focus:border-cyan-500 focus:outline-none transition-colors">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-2">Supported Chains * (comma separated)</label>
+                        <input type="text" name="chains" required class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white focus:border-cyan-500 focus:outline-none transition-colors" placeholder="Ethereum, Solana, Arbitrum">
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm text-gray-400 mb-2">Integration Complexity</label>
+                            <select name="complexity" class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white focus:border-cyan-500 focus:outline-none transition-colors">
+                                <option value="Low">Low</option>
+                                <option value="Medium" selected>Medium</option>
+                                <option value="High">High</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm text-gray-400 mb-2">MEV Protection</label>
+                            <select name="mevProtection" class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white focus:border-cyan-500 focus:outline-none transition-colors">
+                                <option value="Yes">Yes</option>
+                                <option value="No">No</option>
+                                <option value="Partial">Partial</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-2">Strategic Notes</label>
+                        <textarea name="notes" rows="2" class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white focus:border-cyan-500 focus:outline-none transition-colors" placeholder="Strategic rationale for this protocol..."></textarea>
+                    </div>
+
+                    <button type="submit" class="w-full py-4 rounded-lg bg-gradient-to-r from-cyan-500 to-purple-600 text-white font-bold text-lg hover:shadow-lg hover:shadow-cyan-500/25 transition-all mt-4">
+                        <i class="fas fa-plus-circle mr-2"></i> Add for Analysis
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-8 right-8 transform translate-y-20 opacity-0 transition-all duration-300 z-50">
+        <div class="glass-panel rounded-xl p-4 border border-green-500/30 bg-green-500/10 flex items-center gap-3">
+            <i class="fas fa-check-circle text-green-400 text-xl"></i>
+            <span class="text-white font-medium" id="toastMessage">Operation successful</span>
+        </div>
+    </div>
+
+    <script>
+        // Protocol Database with Data Quality Tags
+        let protocols = [
+            {
+                id: '0x',
+                name: '0x Protocol',
+                type: 'Aggregator',
+                color: '#00f0ff',
+                icon: 'fa-exchange-alt',
+                dataQuality: 'verified',
+                minFee: 0,
+                maxFee: 1.0,
+                protocolFee: 0.15,
+                revenueShare: 100,
+                chains: ['Ethereum', 'Base', 'Arbitrum', 'Optimism', 'Polygon', 'BNB', 'Avalanche', 'Scroll', 'Linea'],
+                features: ['Gasless API', 'RFQ System', 'MEV Protection'],
+                bestFor: 'High-frequency EVM swaps',
+                complexity: 'Medium',
+                mevProtection: 'Yes',
+                volume: '$370B+ total (verified)',
+                unique: '100+ liquidity sources, 99.9% uptime',
+                referralCode: 'feeRecipient + buyTokenPercentageFee',
+                scores: { revenue: 9, complexity: 6, coverage: 10, mev: 8, crosschain: 4 }
+            },
+            {
+                id: 'cow',
+                name: 'CoW Swap',
+                type: 'RFQ',
+                color: '#b829dd',
+                icon: 'fa-cow',
+                dataQuality: 'draft',
+                minFee: 0,
+                maxFee: 0.5,
+                protocolFee: 0,
+                revenueShare: 100,
+                chains: ['Ethereum', 'Gnosis', 'Ink'],
+                features: ['Batch Auctions', 'MEV Protection', 'Surplus Capture'],
+                bestFor: 'Large trades, MEV protection',
+                complexity: 'Medium',
+                mevProtection: 'Yes',
+                volume: '$4.8B monthly (estimated)',
+                unique: '42% retention (illustrative), 26% share (estimated)',
+                referralCode: 'Draft CIP Framework (Governance)',
+                scores: { revenue: 7, complexity: 6, coverage: 6, mev: 10, crosschain: 3 }
+            },
+            {
+                id: 'thor',
+                name: 'THORChain',
+                type: 'Cross-Chain',
+                color: '#00ff9d',
+                icon: 'fa-bolt',
+                dataQuality: 'verified',
+                minFee: 0.08,
+                maxFee: 1.0,
+                protocolFee: 0.08,
+                revenueShare: 100,
+                chains: ['Bitcoin', 'Ethereum', 'BNB', 'Avalanche', 'Dogecoin', 'Bitcoin Cash', 'Litecoin'],
+                features: ['Native Assets', 'No Wrapped Tokens', 'Custom Affiliate Fees'],
+                bestFor: 'Native BTC swaps, Cross-chain',
+                complexity: 'Medium',
+                mevProtection: 'No',
+                volume: '$93M+ cumulative (verified)',
+                unique: '$20M affiliate 2024 (verified), Trust Wallet $9.2M',
+                referralCode: 'THORName (basis points)',
+                scores: { revenue: 9, complexity: 5, coverage: 7, mev: 3, crosschain: 10 }
+            },
+            {
+                id: 'odos',
+                name: 'Odos',
+                type: 'Aggregator',
+                color: '#ff9d00',
+                icon: 'fa-route',
+                dataQuality: 'verified',
+                minFee: 0.03,
+                maxFee: 0.25,
+                protocolFee: 0.03,
+                revenueShare: 80,
+                chains: ['Ethereum', 'Base', 'Arbitrum', 'Optimism', 'Polygon', 'Avalanche', 'Scroll', 'Linea', 'Mode', 'BNB'],
+                features: ['Smart Order Routing', 'Multi-input Swaps', 'Partner Codes'],
+                bestFor: 'Complex routes, Multi-token',
+                complexity: 'Low',
+                mevProtection: 'Yes',
+                volume: '$6B+ total (estimated)',
+                unique: '80/20 revenue split, V3 API 3bps',
+                referralCode: 'Partner Code (registerReferralCode)',
+                scores: { revenue: 8, complexity: 8, coverage: 9, mev: 7, crosschain: 5 }
+            },
+            {
+                id: 'lifi',
+                name: 'LI.FI / Jumper',
+                type: 'Bridge',
+                color: '#ff00aa',
+                icon: 'fa-bridge',
+                dataQuality: 'verified',
+                minFee: 0.25,
+                maxFee: 0.50,
+                protocolFee: 0.25,
+                revenueShare: 100,
+                chains: ['Ethereum', 'Polygon', 'Arbitrum', 'Optimism', 'Base', 'Gnosis', 'Fantom', 'Avalanche', 'BNB', 'Solana'],
+                features: ['Bridge Aggregation', 'DEX Aggregation', 'Widget SDK'],
+                bestFor: 'Cross-chain bridging, Multi-route',
+                complexity: 'Low',
+                mevProtection: 'Partial',
+                volume: '$8B+ cumulative (estimated)',
+                unique: '25bps default, Custom fee + integrator',
+                referralCode: 'integrator + fee parameters',
+                scores: { revenue: 7, complexity: 9, coverage: 8, mev: 5, crosschain: 9 }
+            },
+            {
+                id: 'sushi',
+                name: 'SushiSwap',
+                type: 'DEX',
+                color: '#fa52a0',
+                icon: 'fa-fish',
+                dataQuality: 'draft',
+                minFee: 0.25,
+                maxFee: 0.40,
+                protocolFee: 0.25,
+                revenueShare: 30,
+                chains: ['Ethereum', 'Base', 'Arbitrum', 'Optimism', 'Polygon', 'Avalanche', 'BNB', 'Fantom'],
+                features: ['Referral Program', 'Gas Rebates', 'Multi-chain'],
+                bestFor: 'Retail trading, Wide token selection',
+                complexity: 'Low',
+                mevProtection: 'No',
+                volume: '$200M+ monthly (estimated)',
+                unique: '40% fee share pilot (draft)',
+                referralCode: 'Unique referral link (sushi.com/referral)',
+                scores: { revenue: 5, complexity: 8, coverage: 8, mev: 4, crosschain: 6 }
+            },
+            {
+                id: 'kyber',
+                name: 'KyberSwap',
+                type: 'Aggregator',
+                color: '#31cb9e',
+                icon: 'fa-water',
+                dataQuality: 'draft',
+                minFee: 0,
+                maxFee: 0.5,
+                protocolFee: 0,
+                revenueShare: 50,
+                chains: ['Ethereum', 'Arbitrum', 'Optimism', 'Base', 'Polygon', 'Avalanche', 'BNB', 'Scroll', 'Linea', 'Ronin'],
+                features: ['Affiliate Program', 'Elastic Pools', 'Limit Orders'],
+                bestFor: 'LP yield optimization, GameFi',
+                complexity: 'Medium',
+                mevProtection: 'Partial',
+                volume: '$3.7B monthly (estimated)',
+                unique: 'Curated affiliate phase (draft)',
+                referralCode: 'Application via Twitter/X',
+                scores: { revenue: 6, complexity: 6, coverage: 9, mev: 6, crosschain: 6 }
+            },
+            {
+                id: 'openocean',
+                name: 'OpenOcean',
+                type: 'Aggregator',
+                color: '#2b6aff',
+                icon: 'fa-water',
+                dataQuality: 'estimated',
+                minFee: 0,
+                maxFee: 0.3,
+                protocolFee: 0,
+                revenueShare: 85,
+                chains: ['Ethereum', 'Arbitrum', 'Optimism', 'Base', 'Polygon', 'Avalanche', 'BNB', 'Solana', 'Tron', 'Rootstock'],
+                features: ['CEX/DEX Aggregation', 'V3 API', 'Futures'],
+                bestFor: 'Institutional size, Derivatives',
+                complexity: 'High',
+                mevProtection: 'Partial',
+                volume: '$6B+ total (estimated)',
+                unique: 'Powers MetaMask, 1000+ sources',
+                referralCode: 'API Integration (contact team)',
+                scores: { revenue: 7, complexity: 4, coverage: 10, mev: 6, crosschain: 7 }
+            },
+            {
+                id: 'paraswap',
+                name: 'ParaSwap',
+                type: 'Aggregator',
+                color: '#1a5aff',
+                icon: 'fa-rocket',
+                dataQuality: 'verified',
+                minFee: 0,
+                maxFee: 0.5,
+                protocolFee: 0,
+                revenueShare: 85,
+                chains: ['Ethereum', 'Polygon', 'Arbitrum', 'Optimism', 'Base', 'Avalanche', 'BNB', 'Fantom'],
+                features: ['Partner Fees', 'Price Improvement', 'SDK Integration'],
+                bestFor: 'Wallets, DeFi integrations',
+                complexity: 'Medium',
+                mevProtection: 'Yes',
+                volume: '$2M+ annualized (verified)',
+                unique: '15% of wallet fees, 50% positive slippage',
+                referralCode: 'Partner SDK (15% revenue share)',
+                scores: { revenue: 6, complexity: 6, coverage: 8, mev: 8, crosschain: 5 }
+            },
+            {
+                id: 'matcha',
+                name: 'Matcha',
+                type: 'Aggregator',
+                color: '#00d2ff',
+                icon: 'fa-leaf',
+                dataQuality: 'verified',
+                minFee: 0,
+                maxFee: 0.25,
+                protocolFee: 0,
+                revenueShare: 0,
+                chains: ['Ethereum', 'Base', 'Arbitrum', 'Optimism', 'Polygon', 'BNB', 'Avalanche'],
+                features: ['0x Powered', 'Matcha Auto', 'Gasless'],
+                bestFor: 'Retail users, Zero fees',
+                complexity: 'Low',
+                mevProtection: 'Yes',
+                volume: '$1.8B quarterly (estimated)',
+                unique: '0% platform fees (verified)',
+                referralCode: 'N/A (Use 0x API for affiliate)',
+                scores: { revenue: 2, complexity: 9, coverage: 8, mev: 8, crosschain: 4 }
+            }
+        ];
+
+        let filteredProtocols = [...protocols];
+        let chartInstance = null;
+        let currentUseCase = 'affiliate';
+        let weights = { revenue: 30, complexity: 20, coverage: 20, mev: 15, crosschain: 15 };
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            calculateAllScores();
+            renderProtocols();
+            updateSimulation();
+            updateMatrix();
+            loadFromLocalStorage();
+        });
+
+        function calculateAllScores() {
+            protocols.forEach(p => {
+                p.weightedScore = Math.round(
+                    (p.scores.revenue * weights.revenue +
+                     p.scores.complexity * weights.complexity +
+                     p.scores.coverage * weights.coverage +
+                     p.scores.mev * weights.mev +
+                     p.scores.crosschain * weights.crosschain) / 100
+                );
+            });
+        }
+
+        function getDataQualityBadge(quality) {
+            const badges = {
+                verified: '<span class="px-2 py-1 rounded text-xs font-medium badge-verified">Verified</span>',
+                estimated: '<span class="px-2 py-1 rounded text-xs font-medium badge-estimated">Estimated</span>',
+                draft: '<span class="px-2 py-1 rounded text-xs font-medium badge-draft">Draft</span>',
+                illustrative: '<span class="px-2 py-1 rounded text-xs font-medium badge-illustrative">Illustrative</span>'
+            };
+            return badges[quality] || badges.illustrative;
+        }
+
+        function renderProtocols() {
+            const container = document.getElementById('protocolsContainer');
+            container.innerHTML = '';
+            
+            // Sort by weighted score
+            const sorted = [...filteredProtocols].sort((a, b) => b.weightedScore - a.weightedScore);
+            
+            sorted.forEach((protocol, index) => {
+                const card = createProtocolCard(protocol, index);
+                container.appendChild(card);
+            });
+
+            // Add "Add New" card
+            const addCard = document.createElement('div');
+            addCard.className = 'add-protocol-btn rounded-3xl p-8 border-2 border-dashed border-cyan-500/30 flex flex-col items-center justify-center cursor-pointer min-h-[420px] hover:border-cyan-500 hover:bg-cyan-500/10 transition-all group';
+            addCard.onclick = openAddModal;
+            addCard.innerHTML = `
+                <div class="w-16 h-16 rounded-full bg-cyan-500/20 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                    <i class="fas fa-plus text-2xl text-cyan-400"></i>
+                </div>
+                <h3 class="font-display text-xl font-bold text-white mb-2">Add Protocol</h3>
+                <p class="text-sm text-gray-400 text-center">For internal comparison only</p>
+            `;
+            container.appendChild(addCard);
+            
+            document.getElementById('totalProtocols').textContent = protocols.length;
+            document.getElementById('avgScore').textContent = Math.round(protocols.reduce((a, p) => a + p.weightedScore, 0) / protocols.length);
+            
+            const topUseCaseMap = { affiliate: 'Affiliate Expansion', btc: 'BTC-Native', mev: 'MEV Protection', crosschain: 'Cross-Chain' };
+            document.getElementById('topUseCase').textContent = topUseCaseMap[currentUseCase] || 'Affiliate';
+        }
+
+        function createProtocolCard(protocol, index) {
+            const div = document.createElement('div');
+            div.className = 'protocol-card glass-panel rounded-3xl p-6 border border-white/10 relative group';
+            div.style.borderTop = `3px solid ${protocol.color}`;
+            
+            const revenue = calculateRevenue(protocol, 1000000);
+            const scoreRing = createScoreRing(protocol.weightedScore, protocol.color);
+            
+            div.innerHTML = `
+                <div class="delete-btn absolute top-4 right-4 z-10">
+                    <button onclick="deleteProtocol('${protocol.id}')" class="w-8 h-8 rounded-full bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white flex items-center justify-center transition-all">
+                        <i class="fas fa-trash text-xs"></i>
+                    </button>
+                </div>
+                
+                <div class="flex items-start justify-between mb-4 mt-2">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-xl flex items-center justify-center text-white font-bold text-lg" style="background: ${protocol.color}">
+                            <i class="fas ${protocol.icon}"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-display font-bold text-xl text-white">${protocol.name}</h3>
+                            <p class="text-xs text-gray-400">${protocol.type}</p>
+                        </div>
+                    </div>
+                    <div class="score-ring">
+                        ${scoreRing}
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <span class="text-lg font-bold text-white">${protocol.weightedScore}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    ${getDataQualityBadge(protocol.dataQuality)}
+                </div>
+
+                <div class="space-y-3 mb-4">
+                    <div class="metric-highlight p-3 rounded-lg" style="border-left-color: ${protocol.color}">
+                        <div class="text-xs text-gray-400 mb-1">Affiliate Fee Range</div>
+                        <div class="text-lg font-bold text-white">${protocol.minFee}% - ${protocol.maxFee}%</div>
+                        <div class="text-xs text-gray-500">${protocol.revenueShare}% revenue share</div>
+                    </div>
+                    
+                    <div class="flex justify-between py-2 border-b border-white/5">
+                        <span class="text-sm text-gray-400">Strategic Fit</span>
+                        <span class="text-sm text-white">${getUseCaseFit(protocol)}</span>
+                    </div>
+                    <div class="flex justify-between py-2 border-b border-white/5">
+                        <span class="text-sm text-gray-400">Chains</span>
+                        <span class="text-sm text-white">${protocol.chains.length} networks</span>
+                    </div>
+                    <div class="flex justify-between py-2">
+                        <span class="text-sm text-gray-400">Complexity</span>
+                        <span class="text-sm ${protocol.complexity === 'Low' ? 'text-green-400' : protocol.complexity === 'Medium' ? 'text-yellow-400' : 'text-red-400'}">${protocol.complexity}</span>
+                    </div>
+                </div>
+
+                <div class="mt-4 pt-4 border-t border-white/10">
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs text-gray-400">Illust. Rev/$1M</span>
+                        <span class="text-lg font-bold" style="color: ${protocol.color}">$${revenue.toLocaleString()}</span>
+                    </div>
+                </div>
+            `;
+            
+            return div;
+        }
+
+        function createScoreRing(score, color) {
+            const circumference = 2 * Math.PI * 28;
+            const offset = circumference - (score / 10) * circumference;
+            return `
+                <svg width="60" height="60" viewBox="0 0 60 60">
+                    <circle class="bg" cx="30" cy="30" r="28"></circle>
+                    <circle class="progress" cx="30" cy="30" r="28" 
+                            stroke="${color}" 
+                            stroke-dasharray="${circumference}" 
+                            stroke-dashoffset="${offset}"></circle>
+                </svg>
+            `;
+        }
+
+        function getUseCaseFit(protocol) {
+            const fits = {
+                affiliate: protocol.scores.revenue >= 8 ? 'Strong' : protocol.scores.revenue >= 6 ? 'Moderate' : 'Weak',
+                btc: protocol.chains.includes('Bitcoin') ? 'Strong' : 'Weak',
+                mev: protocol.mevProtection === 'Yes' && protocol.scores.mev >= 8 ? 'Strong' : 'Weak',
+                crosschain: protocol.scores.crosschain >= 8 ? 'Strong' : 'Moderate'
+            };
+            return fits[currentUseCase] || 'Moderate';
+        }
+
+        function calculateRevenue(protocol, volume) {
+            const avgFee = (protocol.minFee + protocol.maxFee) / 2;
+            const grossRevenue = volume * (avgFee / 100);
+            return Math.round(grossRevenue * (protocol.revenueShare / 100));
+        }
+
+        function setUseCase(useCase) {
+            currentUseCase = useCase;
+            
+            // Adjust weights based on use case
+            const weightMaps = {
+                affiliate: { revenue: 40, complexity: 15, coverage: 25, mev: 10, crosschain: 10 },
+                btc: { revenue: 30, complexity: 10, coverage: 10, mev: 5, crosschain: 45 },
+                mev: { revenue: 20, complexity: 15, coverage: 15, mev: 45, crosschain: 5 },
+                crosschain: { revenue: 25, complexity: 20, coverage: 20, mev: 5, crosschain: 30 }
+            };
+            
+            weights = weightMaps[useCase];
+            
+            // Update UI
+            document.getElementById('weightRevenue').value = weights.revenue;
+            document.getElementById('weightComplexity').value = weights.complexity;
+            document.getElementById('weightCoverage').value = weights.coverage;
+            document.getElementById('weightMev').value = weights.mev;
+            document.getElementById('weightCrosschain').value = weights.crosschain;
+            updateWeights();
+            
+            // Highlight active button
+            document.querySelectorAll('.use-case-card').forEach(card => {
+                card.style.borderColor = 'rgba(0, 240, 255, 0.1)';
+            });
+            event.currentTarget.style.borderColor = 'rgba(0, 240, 255, 0.5)';
+            
+            showToast(`Optimized for: ${useCase}`);
+        }
+
+        function updateWeights() {
+            weights.revenue = parseInt(document.getElementById('weightRevenue').value);
+            weights.complexity = parseInt(document.getElementById('weightComplexity').value);
+            weights.coverage = parseInt(document.getElementById('weightCoverage').value);
+            weights.mev = parseInt(document.getElementById('weightMev').value);
+            weights.crosschain = parseInt(document.getElementById('weightCrosschain').value);
+            
+            document.getElementById('weightRevenueDisplay').textContent = weights.revenue + '%';
+            document.getElementById('weightComplexityDisplay').textContent = weights.complexity + '%';
+            document.getElementById('weightCoverageDisplay').textContent = weights.coverage + '%';
+            document.getElementById('weightMevDisplay').textContent = weights.mev + '%';
+            document.getElementById('weightCrosschainDisplay').textContent = weights.crosschain + '%';
+            
+            calculateAllScores();
+            renderProtocols();
+            updateMatrix();
+        }
+
+        function toggleScoringWeights() {
+            document.getElementById('weightsPanel').classList.toggle('hidden');
+        }
+
+        function updateSimulation() {
+            const volume = parseInt(document.getElementById('volumeSlider').value);
+            const customFee = parseFloat(document.getElementById('feeSlider').value);
+            
+            document.getElementById('volumeDisplay').textContent = '$' + volume.toLocaleString();
+            document.getElementById('feeDisplay').textContent = customFee.toFixed(2) + '%';
+            
+            let allocations = {};
+            let totalRevenue = 0;
+            
+            filteredProtocols.forEach(p => {
+                const revenue = volume * (customFee / 100) * (p.revenueShare / 100);
+                allocations[p.id] = revenue;
+                totalRevenue += revenue;
+            });
+            
+            document.getElementById('totalRevenue').textContent = '$' + Math.round(totalRevenue).toLocaleString();
+            document.getElementById('activeProtocolCount').textContent = filteredProtocols.length;
+            
+            updateChart(allocations);
+        }
+
+        function updateChart(allocations) {
+            const ctx = document.getElementById('revenueChart').getContext('2d');
+            
+            if (chartInstance) chartInstance.destroy();
+            
+            const sortedData = Object.entries(allocations).sort((a, b) => b[1] - a[1]).slice(0, 6);
+            const labels = sortedData.map(([id, _]) => protocols.find(p => p.id === id)?.name || id);
+            const data = sortedData.map(([_, val]) => val);
+            const colors = sortedData.map(([id, _]) => protocols.find(p => p.id === id)?.color || '#00f0ff');
+            
+            chartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Illustrative Monthly Revenue ($)',
+                        data: data,
+                        backgroundColor: colors.map(c => c + '60'),
+                        borderColor: colors,
+                        borderWidth: 2,
+                        borderRadius: 6,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return '$' + Math.round(context.raw).toLocaleString() + ' (illustrative)';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: 'rgba(255,255,255,0.05)' },
+                            ticks: { 
+                                color: '#666',
+                                callback: function(value) {
+                                    return '$' + (value / 1000).toFixed(0) + 'k';
+                                }
+                            }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#666' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateMatrix() {
+            const tbody = document.getElementById('matrixBody');
+            const sorted = [...filteredProtocols].sort((a, b) => b.weightedScore - a.weightedScore);
+            
+            tbody.innerHTML = sorted.map(p => `
+                <tr class="comparison-row border-b border-white/5 transition-colors">
+                    <td class="py-3 px-3 sticky left-0 bg-[#0a0a0f] z-10">
+                        <div class="flex items-center gap-2">
+                            <div class="w-6 h-6 rounded flex items-center justify-center text-white text-xs" style="background: ${p.color}">
+                                <i class="fas ${p.icon}"></i>
+                            </div>
+                            <span class="font-medium text-white text-sm">${p.name}</span>
+                        </div>
+                    </td>
+                    <td class="py-3 px-3">${getDataQualityBadge(p.dataQuality)}</td>
+                    <td class="py-3 px-3 text-gray-300 text-sm">${p.minFee}% - ${p.maxFee}%</td>
+                    <td class="py-3 px-3 text-cyan-400 text-sm">${p.revenueShare}%</td>
+                    <td class="py-3 px-3 text-gray-300 text-sm">${p.chains.length}</td>
+                    <td class="py-3 px-3">
+                        <span class="text-xs ${p.complexity === 'Low' ? 'text-green-400' : p.complexity === 'Medium' ? 'text-yellow-400' : 'text-red-400'}">${p.complexity}</span>
+                    </td>
+                    <td class="py-3 px-3">
+                        <span class="text-xs ${p.mevProtection === 'Yes' ? 'text-green-400' : p.mevProtection === 'Partial' ? 'text-yellow-400' : 'text-red-400'}">${p.mevProtection}</span>
+                    </td>
+                    <td class="py-3 px-3 font-bold text-white">${p.weightedScore}/10</td>
+                    <td class="py-3 px-3 text-gray-300 text-sm">$${calculateRevenue(p, 1000000).toLocaleString()}</td>
+                </tr>
+            `).join('');
+        }
+
+        // Modal Functions
+        function openAddModal() {
+            document.getElementById('addModal').classList.remove('hidden');
+        }
+
+        function closeAddModal() {
+            document.getElementById('addModal').classList.add('hidden');
+            document.getElementById('addProtocolForm').reset();
+        }
+
+        function handleAddProtocol(e) {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            
+            const complexityVal = formData.get('complexity');
+            const complexityScore = complexityVal === 'Low' ? 8 : complexityVal === 'Medium' ? 6 : 4;
+            
+            const newProtocol = {
+                id: 'custom_' + Date.now(),
+                name: formData.get('name'),
+                type: formData.get('type'),
+                color: '#' + Math.floor(Math.random()*16777215).toString(16),
+                icon: 'fa-cube',
+                dataQuality: formData.get('dataQuality'),
+                minFee: parseFloat(formData.get('minFee')),
+                maxFee: parseFloat(formData.get('maxFee')),
+                revenueShare: parseFloat(formData.get('revenueShare')),
+                chains: formData.get('chains').split(',').map(c => c.trim()).filter(c => c),
+                complexity: complexityVal,
+                mevProtection: formData.get('mevProtection'),
+                scores: {
+                    revenue: 5,
+                    complexity: complexityScore,
+                    coverage: 5,
+                    mev: formData.get('mevProtection') === 'Yes' ? 8 : 4,
+                    crosschain: 5
+                },
+                weightedScore: 0,
+                volume: 'Unknown',
+                unique: formData.get('notes') || 'Custom protocol'
+            };
+            
+            newProtocol.weightedScore = Math.round(
+                (newProtocol.scores.revenue * weights.revenue +
+                 newProtocol.scores.complexity * weights.complexity +
+                 newProtocol.scores.coverage * weights.coverage +
+                 newProtocol.scores.mev * weights.mev +
+                 newProtocol.scores.crosschain * weights.crosschain) / 100
+            );
+            
+            protocols.push(newProtocol);
+            filteredProtocols = [...protocols];
+            renderProtocols();
+            updateSimulation();
+            updateMatrix();
+            saveToLocalStorage();
+            closeAddModal();
+            showToast('Protocol added for analysis');
+        }
+
+        function deleteProtocol(id) {
+            if (confirm('Remove this protocol from analysis?')) {
+                protocols = protocols.filter(p => p.id !== id);
+                filteredProtocols = [...protocols];
+                renderProtocols();
+                updateSimulation();
+                updateMatrix();
+                saveToLocalStorage();
+                showToast('Protocol removed');
+            }
+        }
+
+        function filterProtocols(type) {
+            document.querySelectorAll('#protocolFilters button').forEach(btn => {
+                btn.classList.remove('bg-cyan-500/20', 'text-cyan-400', 'border-cyan-500/30');
+                btn.classList.add('bg-white/5', 'text-gray-400', 'border-white/10');
+            });
+            event.target.classList.remove('bg-white/5', 'text-gray-400', 'border-white/10');
+            event.target.classList.add('bg-cyan-500/20', 'text-cyan-400', 'border-cyan-500/30');
+            
+            if (type === 'all') {
+                filteredProtocols = [...protocols];
+            } else if (type === 'evm') {
+                filteredProtocols = protocols.filter(p => p.chains.includes('Ethereum') && !p.chains.includes('Bitcoin'));
+            } else if (type === 'crosschain') {
+                filteredProtocols = protocols.filter(p => p.chains.includes('Bitcoin') || p.type === 'Cross-Chain' || p.type === 'Bridge');
+            } else if (type === 'highscore') {
+                filteredProtocols = protocols.filter(p => p.weightedScore >= 7);
+            }
+            
+            renderProtocols();
+            updateSimulation();
+            updateMatrix();
+        }
+
+        function setScenario(type) {
+            const scenarios = {
+                conservative: { volume: 500000, fee: 0.20 },
+                moderate: { volume: 5000000, fee: 0.30 },
+                aggressive: { volume: 50000000, fee: 0.50 }
+            };
+            
+            const s = scenarios[type];
+            document.getElementById('volumeSlider').value = s.volume;
+            document.getElementById('feeSlider').value = s.fee;
+            updateSimulation();
+        }
+
+        function exportReport() {
+            const report = {
+                toolName: 'Routing Intelligence Explorer',
+                timestamp: new Date().toISOString(),
+                disclaimer: 'Internal prototype for scenario analysis only. Not for external distribution.',
+                protocols: protocols,
+                simulation: {
+                    volume: document.getElementById('volumeSlider').value,
+                    illustrativeRevenue: document.getElementById('totalRevenue').textContent,
+                    activeProtocols: filteredProtocols.length
+                },
+                limitations: [
+                    'Simplified revenue model (midpoint fee × volume)',
+                    'Excludes gas costs, slippage, failure rates',
+                    'No retention or quote quality modeling',
+                    'Data quality varies (see badges)'
+                ]
+            };
+            
+            downloadJSON(report, 'routing_intelligence_explorer_report.json');
+            showToast('Internal report exported');
+        }
+
+        function exportCSV() {
+            let csv = 'Protocol,Data Quality,Type,Min Fee,Max Fee,Revenue Share,Chains,Complexity,MEV Protection,Weighted Score,Illustrative Rev/$1M,Notes\n';
+            
+            filteredProtocols.forEach(p => {
+                csv += `"${p.name}","${p.dataQuality}","${p.type}",${p.minFee}%,${p.maxFee}%,${p.revenueShare}%,${p.chains.length},"${p.complexity}","${p.mevProtection}",${p.weightedScore},$${calculateRevenue(p, 1000000)},"${p.unique}"\n`;
+            });
+            
+            downloadCSV(csv, 'routing_intelligence_explorer_export.csv');
+            showToast('CSV exported');
+        }
+
+        function downloadJSON(data, filename) {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data, null, 2));
+            const downloadAnchorNode = document.createElement('a');
+            downloadAnchorNode.setAttribute("href", dataStr);
+            downloadAnchorNode.setAttribute("download", filename);
+            document.body.appendChild(downloadAnchorNode);
+            downloadAnchorNode.click();
+            downloadAnchorNode.remove();
+        }
+
+        function downloadCSV(csv, filename) {
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.setAttribute('href', url);
+            a.setAttribute('download', filename);
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+
+        function saveToLocalStorage() {
+            try {
+                localStorage.setItem('routingIntelligenceExplorerProtocols', JSON.stringify(protocols));
+            } catch (e) {
+                console.warn('Could not save to localStorage');
+            }
+        }
+
+        function loadFromLocalStorage() {
+            try {
+                const saved = localStorage.getItem('routingIntelligenceExplorerProtocols');
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    if (parsed && parsed.length > 0) {
+                        protocols = parsed;
+                        filteredProtocols = [...protocols];
+                        renderProtocols();
+                        updateSimulation();
+                        updateMatrix();
+                    }
+                }
+            } catch (e) {
+                console.warn('Could not load from localStorage');
+            }
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMessage').textContent = message;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+
+        // Keyboard Shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeAddModal();
+            if (e.ctrlKey && e.key === 's') {
+                e.preventDefault();
+                exportReport();
+            }
+        });
+    </script>
+</body>
+</html>
